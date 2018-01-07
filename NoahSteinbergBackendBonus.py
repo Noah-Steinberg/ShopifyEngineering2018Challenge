@@ -4,18 +4,19 @@ import json
 import sys
 from time import sleep
 url = "https://backend-challenge-summer-2018.herokuapp.com/challenges.json"
-def progress(list, total):
-	count = len(list);
+def progress(count, total):
 	bar_len = 60
 	filled_len = int(round(bar_len * count / float(total)))
 
 	percents = round(100.0 * count / float(total), 1)
 	bar = '=' * filled_len + '-' * (bar_len - filled_len)
 
-	sys.stdout.write('Progress: [%s] %s%s\r' % (bar, percents, '%'))
 	if count!=total:
+		sys.stdout.write('Progress: [%s] %s%s...\r' % (bar, percents, '%'))
 		sys.stdout.flush()
 	else:
+		sys.stdout.write('Progress: [%s] %s%s...Done\r' % (bar, percents, '%'))
+		sys.stdout.flush()
 		print("\n")
 
 def check(menu, menu_list, curr_list):
@@ -45,11 +46,11 @@ def get_menu(challenge_id):
 	print("Retrieving menu list...")
 	while params['page']<=total_pages:
 		r = json.loads(requests.get(url, params=params).text)
-		total_pages = r['pagination']['total']
+		total_pages = r['pagination']['total'] // r['pagination']['per_page']
+		progress(params['page'], total_pages)
 		for menu in r['menus']:
 			menu_list.append(menu) 
 		params['page']+=1
-	print("Done")
 	return menu_list
 
 def check_menu_list(menu_list):
@@ -61,7 +62,7 @@ def check_menu_list(menu_list):
 		valid_list,curr_list = check(menu, menu_list, [])
 		for m in curr_list:
 			checked.append(m)
-			progress(checked, len(menu_list));
+			progress(len(checked), len(menu_list));
 			sleep(0.1)
 		if(valid_list):
 			answer['valid_menus'].append({'root_id': curr_list[0], 'children': curr_list[1:] })
